@@ -1,6 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const connectToDatabase = require("../models/db");
+const bcryptjs = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const logger = require('../logger');
 
 router.post('/register', async (req, res) => {
     try {
@@ -32,13 +35,53 @@ router.post('/register', async (req, res) => {
             },
         };
 
-        const authtoken = jwt.sign(payload, JWT_SECRET);
+        const authtoken = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' });
 
         logger.info('User registered successfully');
 
-        return  res.json({ authtoken, email });
+        return res.status(200).json({ authtoken, email: req.body.email });
     } catch (e) {
          return res.status(500).send('Internal server error');
+    }
+});
+
+router.post('/login', async (req, res) => {
+    try {
+        const db = await connectToDatabase();
+
+        const collection = db.collection("users");
+
+        const user = await collection.findOne({ email: req.body.email });
+
+        let result = await bcryptjs.compare(req.body.password, user.password);
+
+        if(!result) {
+            logger.error('Passwords do not match');
+            return res.status(404).json({ error: 'Wrong pasword' });
+        }
+
+        const userName = user.firstName;
+        const userEmail = user.email;
+
+        let payload = {
+            user: {
+                id: user._id.toString(),
+             },
+         };
+
+         const authtoken = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' });
+
+        if (user) {
+            logger.info('User logged in successfully');
+            return res.status(200).json({ authtoken, userName, userEmail });
+        } else {
+            logger.error('User not found');
+            return res.status(404).json({ error: 'User not found' });
+        }
+       
+    } catch (e) {
+         return res.status(500).send('Internal server error');
+
     }
 });
 

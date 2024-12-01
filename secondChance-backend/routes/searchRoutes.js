@@ -31,7 +31,6 @@ router.get('/', async (req, res, next) => {
         const gifts = await collection.find(query).toArray();
         res.json(gifts);
     } catch (e) {
-        logger.log("error search ->", e);
         next(e);
     }
 });
