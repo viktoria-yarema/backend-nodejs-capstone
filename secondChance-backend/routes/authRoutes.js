@@ -85,4 +85,52 @@ router.post('/login', async (req, res) => {
     }
 });
 
+const { body, validationResult } = require('express-validator');
+
+router.put('/update', async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      logger.error('Validation errors in update request', errors.array());
+      return res.status(400).json({ errors: errors.array() });
+    }
+    
+    try {
+    const email = req.headers.email;
+
+    if (!email) {
+        logger.error('Email not found in the request headers');
+        return res.status(400).json({ error: "Email not found in the request headers" });
+    }
+
+    const db = await connectToDatabase();
+
+    const collection = db.collection("users");
+
+    const existingUser = await collection.findOne({ email });
+
+    existingUser.firstName = req.body.name;
+    existingUser.updatedAt = new Date();
+
+    const updatedUser = await collection.findOneAndUpdate(
+        { email },
+        { $set: existingUser },
+        { returnDocument: 'after' }
+    );
+
+    const payload = {
+        user: {
+           id: updatedUser._id.toString(),
+        },
+    };
+    
+    const authtoken = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' });
+    
+    logger.info('User updated successfully');
+
+    return res.status(200).json({authtoken});
+    } catch (e) {
+        return res.status(500).send('Internal server error');
+    }
+});
+
 module.exports = router;
