@@ -2,13 +2,13 @@
 require('dotenv').config();
 const MongoClient = require('mongodb').MongoClient;
 
-// MongoDB connection URL with authentication options
-let url = `${process.env.MONGO_URL}`;
-    console.log(process.env.MONGO_URL, "process.env.MONGO_URL")
-let dbInstance = null;
-const dbName = `${process.env.MONGO_DB}`;
-
 async function connectToDatabase() {
+    // MongoDB connection URL with authentication options
+    let url = `${process.env.MONGO_URL}`;
+        
+    let dbInstance = null;
+    const dbName = `${process.env.MONGO_DB}`;
+
     if (dbInstance){
         return dbInstance
     };

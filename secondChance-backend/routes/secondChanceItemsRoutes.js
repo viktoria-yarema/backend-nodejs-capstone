@@ -24,15 +24,15 @@ const upload = multer({ storage: storage });
 
 // Get all secondChanceItems
 router.get('/', async (req, res, next) => {
-    logger.info('/ called');
+    logger.info('/called');
     try {
         const db = await connectToDatabase();
         const collection = db.collection("secondChanceItems");
         const secondChanceItems = await collection.find({}).toArray();
-
+       
        return res.json(secondChanceItems);
     } catch (e) {
-        logger.console.error('oops something went wrong', e)
+       console.error('oops something went wrong', e)
         next(e);
     }
 });
