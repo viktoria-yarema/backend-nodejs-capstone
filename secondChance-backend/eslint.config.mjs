@@ -4,18 +4,10 @@ import pluginJs from "@eslint/js";
 /** @type {import('eslint').Linter.Config[]} */
 export default [
   {
-    // Apply settings to all JavaScript files
-    files: ["**/*.js"],
+    files: ["**/*.js"], // Applies to all JS files
     languageOptions: {
-      sourceType: "script", // Use CommonJS script mode
+      sourceType: "script", // CommonJS mode
       globals: globals.node, // Use Node.js globals
-    },
-  },
-  {
-    // Optionally, add browser-specific configuration for specific files
-    files: ["**/browser/**/*.js"], // Example for browser-specific files
-    languageOptions: {
-      globals: globals.browser,
     },
   },
   pluginJs.configs.recommended,
