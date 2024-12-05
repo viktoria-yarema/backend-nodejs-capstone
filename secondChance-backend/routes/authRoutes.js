@@ -4,18 +4,23 @@ const connectToDatabase = require("../models/db");
 const bcryptjs = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const logger = require("../logger");
+const { validationResult } = require("express-validator");
 
+// Helper function for sending error responses
+const handleError = (res, loggerMessage, statusCode, clientMessage) => {
+  logger.error(loggerMessage);
+  return res.status(statusCode).json({ error: clientMessage });
+};
+
+// Register endpoint
 router.post("/register", async (req, res) => {
   try {
     const db = await connectToDatabase();
-
     const collection = db.collection("users");
 
     const existingEmail = await collection.findOne({ email: req.body.email });
-
     if (existingEmail) {
-      logger.error("Email id already exists");
-      return res.status(400).json({ error: "Email id already exists" });
+      return handleError(res, "Email id already exists", 400, "Email id already exists");
     }
 
     const salt = await bcryptjs.genSalt(10);
@@ -40,32 +45,30 @@ router.post("/register", async (req, res) => {
     });
 
     logger.info("User registered successfully");
-
     return res.status(200).json({ authtoken, email: req.body.email });
   } catch (e) {
-    next(e);
+    logger.error("Error during user registration", e);
+    return res.status(500).send("Internal server error");
   }
 });
 
+// Login endpoint
 router.post("/login", async (req, res) => {
   try {
     const db = await connectToDatabase();
-
     const collection = db.collection("users");
 
     const user = await collection.findOne({ email: req.body.email });
-
-    let result = await bcryptjs.compare(req.body.password, user.password);
-
-    if (!result) {
-      logger.error("Passwords do not match");
-      return res.status(404).json({ error: "Wrong pasword" });
+    if (!user) {
+      return handleError(res, "User not found", 404, "User not found");
     }
 
-    const userName = user.firstName;
-    const userEmail = user.email;
+    const isPasswordValid = await bcryptjs.compare(req.body.password, user.password);
+    if (!isPasswordValid) {
+      return handleError(res, "Passwords do not match", 400, "Wrong password");
+    }
 
-    let payload = {
+    const payload = {
       user: {
         id: user._id.toString(),
       },
@@ -75,20 +78,15 @@ router.post("/login", async (req, res) => {
       expiresIn: "1h",
     });
 
-    if (user) {
-      logger.info("User logged in successfully");
-      return res.status(200).json({ authtoken, userName, userEmail });
-    } else {
-      logger.error("User not found");
-      return res.status(404).json({ error: "User not found" });
-    }
+    logger.info("User logged in successfully");
+    return res.status(200).json({ authtoken, userName: user.firstName, userEmail: user.email });
   } catch (e) {
+    logger.error("Error during user login", e);
     return res.status(500).send("Internal server error");
   }
 });
 
-const { body, validationResult } = require("express-validator");
-
+// Update user endpoint
 router.put("/update", async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -98,32 +96,26 @@ router.put("/update", async (req, res) => {
 
   try {
     const email = req.headers.email;
-
     if (!email) {
-      logger.error("Email not found in the request headers");
-      return res
-        .status(400)
-        .json({ error: "Email not found in the request headers" });
+      return handleError(res, "Email not found in the request headers", 400, "Email not found in the request headers");
     }
 
     const db = await connectToDatabase();
-
     const collection = db.collection("users");
-
-    const existingUser = await collection.findOne({ email });
-
-    existingUser.firstName = req.body.name;
-    existingUser.updatedAt = new Date();
 
     const updatedUser = await collection.findOneAndUpdate(
       { email },
-      { $set: existingUser },
-      { returnDocument: "after" },
+      { $set: { firstName: req.body.name, updatedAt: new Date() } },
+      { returnDocument: "after" }
     );
+
+    if (!updatedUser.value) {
+      return handleError(res, "User not found during update", 404, "User not found");
+    }
 
     const payload = {
       user: {
-        id: updatedUser._id.toString(),
+        id: updatedUser.value._id.toString(),
       },
     };
 
@@ -132,10 +124,10 @@ router.put("/update", async (req, res) => {
     });
 
     logger.info("User updated successfully");
-
     return res.status(200).json({ authtoken });
   } catch (e) {
-    next(e);
+    logger.error("Error during user update", e);
+    return res.status(500).send("Internal server error");
   }
 });
 
