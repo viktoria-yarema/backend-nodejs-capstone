@@ -6,8 +6,11 @@ export default [
     files: ["**/*.js", "**/*.ts"],
     languageOptions: {
       sourceType: "commonjs",
-      globals: globals.browser,
-      env: { node: true, es2021: true }
+      globals: {
+        ...globals.browser,
+        ...globals.node,
+        ...globals.es2021
+      }
     }
   }
 ];
