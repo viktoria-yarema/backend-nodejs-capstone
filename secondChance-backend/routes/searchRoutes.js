@@ -1,14 +1,13 @@
 const express = require("express");
 const router = express.Router();
 const connectToDatabase = require("../models/db");
+require("dotenv").config();
 
 // Search for gifts
 router.get("/", async (req, res, next) => {
   try {
     const db = await connectToDatabase();
-
-    const collection = db.collection("gifts");
-
+    const collection = db.collection(process.env.MONGO_COLLECTION);
     // Initialize the query object
     let query = {};
 
@@ -17,6 +16,7 @@ router.get("/", async (req, res, next) => {
       query.name = { $regex: req.query.name, $options: "i" }; // Using regex for partial match, case-insensitive
     }
 
+    // Add other filters to the query
     if (req.query.category) {
       query.category = req.query.category;
     }

@@ -8,7 +8,8 @@ const connectToDatabase = require("./models/db");
 
 const app = express();
 app.use("*", cors());
-const port = 3060;
+const port = process.env.PORT || 3060;
+const host = "0.0.0.0"; // Important for Docker/container environments
 
 // Connect to MongoDB; we just do this one time
 connectToDatabase()
@@ -45,6 +46,6 @@ app.get("/", (_, res) => {
   res.send("Inside the server");
 });
 
-app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
+app.listen(3060, () => {
+  console.log("Server running on port 3060");
 });

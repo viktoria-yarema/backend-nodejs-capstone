@@ -13,7 +13,12 @@ async function connectToDatabase() {
     return dbInstance;
   }
 
-  const client = new MongoClient(url);
+  const client = new MongoClient(url, {
+    serverSelectionTimeoutMS: 5000,
+    connectTimeoutMS: 10000,
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  });
 
   try {
     await client.connect();

@@ -45,10 +45,10 @@ router.post("/register", async (req, res) => {
     });
 
     logger.info("User registered successfully");
-    return res.status(200).json({ authtoken, email: req.body.email });
+    return res.json({ authtoken, email: req.body.email });
   } catch (e) {
     logger.error("Error during user registration", e);
-    return res.status(500).send("Internal server error");
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
 
@@ -63,7 +63,10 @@ router.post("/login", async (req, res) => {
       return handleError(res, "User not found", 404, "User not found");
     }
 
-    const isPasswordValid = await bcryptjs.compare(req.body.password, user.password);
+    const isPasswordValid = await bcryptjs.compare(
+      req.body.password,
+      user.password,
+    );
     if (!isPasswordValid) {
       return handleError(res, "Passwords do not match", 400, "Wrong password");
     }
@@ -79,7 +82,11 @@ router.post("/login", async (req, res) => {
     });
 
     logger.info("User logged in successfully");
-    return res.status(200).json({ authtoken, userName: user.firstName, userEmail: user.email });
+    return res.json({
+      authtoken,
+      userName: user.firstName,
+      userEmail: user.email,
+    });
   } catch (e) {
     logger.error("Error during user login", e);
     return res.status(500).send("Internal server error");
@@ -97,7 +104,12 @@ router.put("/update", async (req, res) => {
   try {
     const email = req.headers.email;
     if (!email) {
-      return handleError(res, "Email not found in the request headers", 400, "Email not found in the request headers");
+      return handleError(
+        res,
+        "Email not found in the request headers",
+        400,
+        "Email not found in the request headers",
+      );
     }
 
     const db = await connectToDatabase();
@@ -106,11 +118,16 @@ router.put("/update", async (req, res) => {
     const updatedUser = await collection.findOneAndUpdate(
       { email },
       { $set: { firstName: req.body.name, updatedAt: new Date() } },
-      { returnDocument: "after" }
+      { returnDocument: "after" },
     );
 
     if (!updatedUser.value) {
-      return handleError(res, "User not found during update", 404, "User not found");
+      return handleError(
+        res,
+        "User not found during update",
+        404,
+        "User not found",
+      );
     }
 
     const payload = {

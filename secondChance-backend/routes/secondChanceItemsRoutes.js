@@ -56,9 +56,10 @@ router.get("/:id", async (req, res, next) => {
     return res.status(200).json(secondChanceItem);
   } catch (e) {
     console.error("Error in GET /:id", e);
-    res
-      .status(500)
-      .json({ message: "An error occurred while fetching the item." });
+    res.status(500).json({
+      message: "An error occurred while fetching the item.",
+      error: e.message,
+    });
     next(e);
   }
 });
@@ -87,7 +88,7 @@ router.put("/:id", async (req, res, next) => {
       },
       { returnDocument: "after" },
       { returnDocument: "after" },
-      { returnDocument: "after" }
+      { returnDocument: "after" },
     );
 
     if (updatedSecondChanceItem) {

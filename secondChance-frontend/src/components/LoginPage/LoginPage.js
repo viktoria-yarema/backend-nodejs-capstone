@@ -22,7 +22,7 @@ function LoginPage() {
     const handleLogin = async (e) => {
         e.preventDefault();
         //api call
-        const res = await fetch(`${urlConfig.backendUrl}/api/auth/login`, {
+        const res = await fetch(`${urlConfig.backendUrl}/api/secondchance/auth/login`, {
           method: 'POST',
           headers: {
             'content-type': 'application/json',
